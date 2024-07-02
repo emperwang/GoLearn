@@ -5,23 +5,21 @@ import (
 )
 
 // 通过 channel来和主线程交互
-func outputByAsync(out chan<- int) {
-	for i:=0; i<10; i++ {
-		fmt.Println("output",i)
+func OutputByAsync(out chan<- int) {
+	for i := 0; i < 10; i++ {
+		fmt.Println("output", i)
 	}
-	out<- 10
+	out <- 10
 	close(out)
 }
 
-
-func Calloutput(){
+func Calloutput() {
 	var info chan int = make(chan int, 1)
-	go outputByAsync(info)
+	go OutputByAsync(info)
 
 	// 从channel中读取数据
 	// 当channel关闭后,读完数据会退出for
 	for i := range info {
-		fmt.Println("outputAsync finished. i = ",i)
+		fmt.Println("outputAsync finished. i = ", i)
 	}
 }
-

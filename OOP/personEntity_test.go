@@ -2,12 +2,11 @@ package OOP
 
 import (
 	"fmt"
-	"tutorial/GoLearn/OOP"
 	"testing"
 )
 
 func TestPupilFuncs(t *testing.T) {
-	pupil := OOP.Pupil {}
+	pupil := Pupil{}
 	// call person's function
 	pupil.ChangeName("tom")
 	pupil.SetSex(true)
@@ -18,9 +17,8 @@ func TestPupilFuncs(t *testing.T) {
 	fmt.Println("pupil = ", pupil)
 }
 
-
 func TestCollageStudent(t *testing.T) {
-	stu := OOP.CollageStudent{}
+	stu := CollageStudent{}
 	// call person's function
 	stu.ChangeName("Jason")
 	stu.SetSex(true)
@@ -32,7 +30,3 @@ func TestCollageStudent(t *testing.T) {
 
 	fmt.Println("student = ", stu)
 }
-
-
-
-

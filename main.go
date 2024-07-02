@@ -1,15 +1,17 @@
 package main
 
 import (
-	_"tutorial/GoLearn/variable"
-	_"tutorial/GoLearn/statement"
-	_"tutorial/GoLearn/container"
-	"path"
+	"fmt"
+	_ "fmt"
 	"os"
-	_"fmt"
+	"path"
+	_ "tutorial/GoLearn/container"
 	"tutorial/GoLearn/fileutils"
+	_ "tutorial/GoLearn/statement"
+	_ "tutorial/GoLearn/variable"
 )
 
+// go proxy http://goproxy.cn
 func main() {
 	// fmt.Println("hello world")
 	//variable.TestVariable()
@@ -23,4 +25,6 @@ func main() {
 	pwd, _ := os.Getwd()
 	mainpath := path.Join(pwd, "main.go")
 	fileutils.ReadFile(mainpath)
+
+	fmt.Println("hello world")
 }
