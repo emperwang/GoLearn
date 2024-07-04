@@ -1,16 +1,13 @@
-pacakge reflectfunc
+package reflectfunc
 
-import(
-	"fmt"
+import (
 	"reflect"
 )
 
-func ReflectType(val interface){
+func ReflectType(val interface{}) {
 	reflect.TypeOf(val)
 }
 
-
-func ReflectValue(val interface){
+func ReflectValue(val interface{}) {
 
 }
-
