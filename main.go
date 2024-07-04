@@ -2,11 +2,8 @@ package main
 
 import (
 	"fmt"
-	_ "fmt"
-	"os"
-	"path"
+	"tutorial/GoLearn/args"
 	_ "tutorial/GoLearn/container"
-	"tutorial/GoLearn/fileutils"
 	_ "tutorial/GoLearn/statement"
 	_ "tutorial/GoLearn/variable"
 )
@@ -22,10 +19,14 @@ func main() {
 	//container.SliceContainer()
 	//container.MapContainer()
 
-	pwd, _ := os.Getwd()
-	mainpath := path.Join(pwd, "main.go")
-	fileutils.ReadFile(mainpath)
+	// pwd, _ := os.Getwd()
+	// mainpath := path.Join(pwd, "main.go")
+	// fileutils.ReadFile(mainpath)
 
 	fmt.Println("hello world")
 
+	// cmd flags
+	//args.ReadFlags()
+
+	args.Subcmd()
 }
