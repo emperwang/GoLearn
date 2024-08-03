@@ -6,5 +6,5 @@ import (
 
 func main() {
 
-	ns.NewNsProcess()
+	ns.NewCgroupFunc()
 }
