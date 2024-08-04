@@ -19,7 +19,8 @@ func main() {
 	}
 	app.Before = func(ctx *cli.Context) error {
 		// Log as Json
-		log.SetFormatter(&log.JSONFormatter{})
+		log.SetFormatter(&log.TextFormatter{})
+		log.SetReportCaller(true)
 		log.SetOutput(os.Stdout)
 		return nil
 	}

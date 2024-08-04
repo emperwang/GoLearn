@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"tutorial/GoLearn/cgroups/subsystems"
 	"tutorial/GoLearn/container"
 
 	log "github.com/sirupsen/logrus"
@@ -19,6 +19,18 @@ var runCommand = cli.Command{
 			Name:  "ti",
 			Usage: "enable tty",
 		},
+		cli.StringFlag{
+			Name:  "m",
+			Usage: "memory limit",
+		},
+		cli.StringFlag{
+			Name:  "cpushare",
+			Usage: "cpushare limit",
+		},
+		cli.StringFlag{
+			Name:  "cpuset",
+			Usage: "cpuset limit",
+		},
 	},
 	/*
 		run 命令真正执行的函数
@@ -30,10 +42,21 @@ var runCommand = cli.Command{
 		if len(context.Args()) < 1 {
 			return fmt.Errorf("Missing container command")
 		}
+		var cmdArray []string
 
-		cmd := context.Args().Get(0)
+		for _, arg := range context.Args() {
+			cmdArray = append(cmdArray, arg)
+		}
 		tty := context.Bool("ti")
-		Run(tty, cmd)
+
+		// resource limit
+		resConf := &subsystems.ResourceConfig{
+			MemoryLimit: context.String("m"),
+			CpuSet:      context.String("cpuset"),
+			CpuShare:    context.String("cpushare"),
+		}
+
+		Run(tty, cmdArray, resConf)
 		return nil
 	},
 }
@@ -44,21 +67,7 @@ var initCommand = cli.Command{
 	Usage: "Init container process to run User's process in container. Do not call it outside",
 	Action: func(context *cli.Context) error {
 		log.Infof("init coming")
-		cmd := context.Args().Get(0)
-		log.Infof("cmd %s", cmd)
-
-		err := container.RunContainerInitProcess(cmd, nil)
+		err := container.RunContainerInitProcess()
 		return err
 	},
-}
-
-func Run(tty bool, command string) {
-	parent := container.NewParentProcess(tty, command)
-
-	if err := parent.Start(); err != nil {
-		log.Error(err)
-	}
-
-	parent.Wait()
-	os.Exit(1)
 }

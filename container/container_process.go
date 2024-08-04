@@ -17,10 +17,14 @@ import (
 3. clond 就是fork一个新进程, 并且使用了 namespace 隔离新创建的进程和外部环境
 4. 如果执行了 -ti 参数, 就需要把当前进程的输入输出导入到标准输入输出上
 */
-func NewParentProcess(tty bool, command string) *exec.Cmd {
-	args := []string{"init", command}
+func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+	readPipe, writePipe, err := NewPipe()
+	if err != nil {
+		log.Errorf("new Pipe error: %v", err)
+		return nil, nil
+	}
 
-	cmd := exec.Command("/proc/self/exe", args...)
+	cmd := exec.Command("/proc/self/exe", "init")
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS | syscall.CLONE_NEWNET | syscall.CLONE_NEWIPC,
@@ -31,28 +35,18 @@ func NewParentProcess(tty bool, command string) *exec.Cmd {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
-
-	return cmd
+	cmd.ExtraFiles = []*os.File{readPipe}
+	return cmd, writePipe
 }
 
-/*
-这里的init 环境是在容器内部执行的, 也就是说,代码执行到这里后, 容器已经创建出来.
-这是容器执行的第一个进程.
+// 命令通过 pipe 传递
+func NewPipe() (*os.File, *os.File, error) {
 
-使用mount 先重新挂载 proc 文件系统,以便后面通过ps等命令查看进程情况
-*/
-func RunContainerInitProcess(command string, args []string) error {
-	log.Infof("init command: %s", command)
+	read, write, err := os.Pipe()
 
-	defaultMountFlags := syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
-
-	syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
-
-	argv := []string{command}
-
-	if err := syscall.Exec(command, argv, os.Environ()); err != nil {
-		log.Errorf(err.Error())
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return nil
+	return read, write, nil
 }
