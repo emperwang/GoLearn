@@ -27,7 +27,11 @@ func Run(tty bool, command []string, res *subsystems.ResourceConfig) {
 
 	sendInitCommand(command, writePipe)
 	parent.Wait()
-	os.Exit(1)
+	rootDir := "/root/docker"
+	mntDir := "/root/docker/mnt"
+
+	container.DeleteWorkSpae(rootDir, mntDir)
+	os.Exit(0)
 }
 
 // 发送init 命令
