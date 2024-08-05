@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
@@ -18,7 +19,7 @@ import (
 3. clond 就是fork一个新进程, 并且使用了 namespace 隔离新创建的进程和外部环境
 4. 如果执行了 -ti 参数, 就需要把当前进程的输入输出导入到标准输入输出上
 */
-func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 	readPipe, writePipe, err := NewPipe()
 	if err != nil {
 		log.Errorf("new Pipe error: %v", err)
@@ -38,7 +39,7 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 	}
 	rootDir := "/root/docker"
 	mntDir := "/root/docker/mnt"
-	NewWorkSpace(rootDir, mntDir)
+	NewWorkSpace(rootDir, mntDir, volume)
 	cmd.ExtraFiles = []*os.File{readPipe}
 	cmd.Dir = mntDir
 	return cmd, writePipe
@@ -56,11 +57,66 @@ func NewPipe() (*os.File, *os.File, error) {
 	return read, write, nil
 }
 
-func NewWorkSpace(rootUrl string, mntUrl string) {
+func NewWorkSpace(rootUrl string, mntUrl string, volume string) {
 	CreateReadOnlyLayer(rootUrl)
 	CreateWriteLayer(rootUrl)
 
 	CreateMountPoint(rootUrl, mntUrl)
+
+	//  如果传递了volume参数, 则需要挂载 volume
+	if volume != "" {
+		volumeUrls := volumeUrlExtract(volume)
+
+		if len(volumeUrls) == 2 && volumeUrls[0] != "" && volumeUrls[1] != "" {
+			MountVolume(rootUrl, mntUrl, volumeUrls)
+		} else {
+			log.Errorf("volume parameter input not correct. %s", &volume)
+		}
+	}
+}
+
+func volumeUrlExtract(volume string) []string {
+	var volumeUrls []string
+	volumeUrls = strings.Split(volume, ":")
+	return volumeUrls
+}
+
+func MountVolume(rootUrl string, mntUrl string, volumeUrls []string) {
+	// 宿主机目录
+	parentUrl := volumeUrls[0]
+	baseDir := path.Dir(parentUrl)
+	workDir := path.Join(baseDir, "work")
+	lowerDir := path.Join(baseDir, "lower")
+	log.Infof("parentUrl %s, basedir %s, workDir %s", parentUrl, baseDir, workDir)
+	if err := os.MkdirAll(parentUrl, 0777); err != nil {
+		log.Errorf("Mkdir parent dir %s error. %v", parentUrl, err)
+	}
+
+	if err := os.MkdirAll(workDir, 0777); err != nil {
+		log.Errorf("Mkdir workdir %s error. %v", workDir, err)
+	}
+	if err := os.MkdirAll(lowerDir, 0777); err != nil {
+		log.Errorf("Mkdir lowerDir %s error. %v", workDir, err)
+	}
+
+	// 容器挂载点
+	containerUrl := volumeUrls[1]
+	containerVolumeUrl := path.Join(mntUrl, containerUrl)
+
+	if err := os.MkdirAll(containerVolumeUrl, 0777); err != nil {
+		log.Errorf("create containerVolume dir %s error. %v", containerVolumeUrl, err)
+	}
+
+	// 把宿主机文件目录挂载到 容器目录中
+	dirs := "lowerdir=" + lowerDir + ",upperdir=" + parentUrl + ",workdir=" + workDir
+	log.Infof("mount volume cmd: mount -t overlay -o %s overlay %s", dirs, containerVolumeUrl)
+	cmd := exec.Command("mount", "-t", "overlay", "-o", dirs, "overlay", containerVolumeUrl)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Errorf("Mount volume fail. %v", err)
+	}
 }
 
 func CreateReadOnlyLayer(rootUrl string) {
@@ -127,9 +183,30 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func DeleteWorkSpae(rootUrl string, mntUrl string) {
+func DeleteWorkSpae(rootUrl string, mntUrl string, volume string) {
+	if volume != "" {
+		volumeUrls := volumeUrlExtract(volume)
+
+		if len(volumeUrls) == 2 && volumeUrls[0] != "" && volumeUrls[1] != "" {
+			DeleteMountPointWithVolume(rootUrl, mntUrl, volumeUrls)
+		}
+	}
 	DeleteMountPoint(rootUrl, mntUrl)
 	DeleteWriteLayer(rootUrl)
+}
+
+// 卸载容器中的挂载点
+func DeleteMountPointWithVolume(rootUrl string, mntUrl string, volumeUrls []string) {
+	// 容器中的挂载点
+	containerUrl := path.Join(mntUrl, volumeUrls[1])
+
+	cmd := exec.Command("umount", containerUrl)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Errorf("umount volume fail. %v", err)
+	}
 }
 
 func DeleteMountPoint(rootUrl string, mntUrl string) {
@@ -148,7 +225,12 @@ func DeleteMountPoint(rootUrl string, mntUrl string) {
 
 func DeleteWriteLayer(rootUrl string) {
 	writeUrl := path.Join(rootUrl, "writeLayer")
+	workUrl := path.Join(rootUrl, "work")
 	if err := os.RemoveAll(writeUrl); err != nil {
 		log.Errorf("Remove write layer %s fail. %v", writeUrl, err)
+	}
+
+	if err := os.RemoveAll(workUrl); err != nil {
+		log.Errorf("Remove work layer %s fail. %v", writeUrl, err)
 	}
 }
