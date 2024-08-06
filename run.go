@@ -26,12 +26,12 @@ func Run(tty bool, command []string, res *subsystems.ResourceConfig, volume stri
 	cgroupManage.Apply(parent.Process.Pid)
 
 	sendInitCommand(command, writePipe)
-	parent.Wait()
-	rootDir := "/root/docker"
-	mntDir := "/root/docker/mnt"
-
-	container.DeleteWorkSpae(rootDir, mntDir, volume)
-	os.Exit(0)
+	if tty {
+		parent.Wait()
+		rootDir := "/root/docker"
+		mntDir := "/root/docker/mnt"
+		container.DeleteWorkSpae(rootDir, mntDir, volume)
+	}
 }
 
 // 发送init 命令
