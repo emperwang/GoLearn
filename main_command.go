@@ -117,3 +117,15 @@ var listCommand = cli.Command{
 		return nil
 	},
 }
+
+var logCommand = cli.Command{
+	Name:  "log",
+	Usage: "view container log",
+	Action: func(context *cli.Context) error {
+		if len(context.Args()) != 1 {
+			return fmt.Errorf("please input the container name that you want to view")
+		}
+		container.ViewContainerLog(context.Args().Get(0))
+		return nil
+	},
+}

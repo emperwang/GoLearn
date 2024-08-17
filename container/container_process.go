@@ -1,6 +1,7 @@
 package container
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -19,7 +20,7 @@ import (
 3. clond 就是fork一个新进程, 并且使用了 namespace 隔离新创建的进程和外部环境
 4. 如果执行了 -ti 参数, 就需要把当前进程的输入输出导入到标准输入输出上
 */
-func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume string, containerName string) (*exec.Cmd, *os.File) {
 	readPipe, writePipe, err := NewPipe()
 	if err != nil {
 		log.Errorf("new Pipe error: %v", err)
@@ -36,6 +37,26 @@ func NewParentProcess(tty bool, volume string) (*exec.Cmd, *os.File) {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+	} else {
+		// 如果后台运行, 则把输出重定向到文件中
+		// 方便使用 docker logs 查看镜像日志
+
+		dirUrl := fmt.Sprintf(DefaultInfoLocation, containerName)
+
+		if err := os.MkdirAll(dirUrl, 0644); err != nil {
+			log.Errorf("create container log dir failed. %s %v", dirUrl, err)
+			return nil, nil
+		}
+
+		stdLogFilePath := path.Join(dirUrl, ContainerLogFile)
+		stdLogFile, err := os.Create(stdLogFilePath)
+		if err != nil {
+			log.Errorf("newParentProcess create file %s error %v", stdLogFilePath, err)
+			return nil, nil
+		}
+
+		cmd.Stdout = stdLogFile
+		//cmd.Stdout = stdLogFile
 	}
 	rootDir := "/root/docker"
 	mntDir := "/root/docker/mnt"

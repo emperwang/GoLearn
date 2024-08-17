@@ -30,6 +30,7 @@ var (
 	EXIT                string = "exit"
 	DefaultInfoLocation string = "/var/run/mydocker/%s/"
 	ConfigName          string = "config.json"
+	ContainerLogFile    string = "container.log"
 )
 
 func RecordContainerInfo(containerPid int, commandArray []string, containerName string) (string, error) {
