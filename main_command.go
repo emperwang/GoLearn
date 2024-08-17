@@ -108,3 +108,12 @@ var commitCommand = cli.Command{
 		return nil
 	},
 }
+
+var listCommand = cli.Command{
+	Name:  "ps",
+	Usage: "list all container info",
+	Action: func(context *cli.Context) error {
+		container.ListAllContainers()
+		return nil
+	},
+}
