@@ -21,7 +21,7 @@ func (c *CpusetSubsystem) Set(cgroupPath string, res *ResourceConfig) error {
 		if res.CpuSet != "" {
 			err := os.WriteFile(path.Join(subsystemCgroupPath, "cpuset.cpus"), []byte(res.CpuSet), 0644)
 			if err != nil {
-				log.Errorf("cpuset error: ", err)
+				log.Errorf("cpuset error: %s", err)
 			}
 			err = os.WriteFile(path.Join(subsystemCgroupPath, "cpuset.mems"), []byte(strconv.Itoa(0)), 0644)
 			return err
