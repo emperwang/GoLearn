@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"tutorial/GoLearn/cgroups/subsystems"
 	"tutorial/GoLearn/container"
 
@@ -126,6 +128,33 @@ var logCommand = cli.Command{
 			return fmt.Errorf("please input the container name that you want to view")
 		}
 		container.ViewContainerLog(context.Args().Get(0))
+		return nil
+	},
+}
+
+var execCommand = cli.Command{
+	Name:  "exec",
+	Usage: "enter process namespace",
+	Action: func(context *cli.Context) error {
+
+		// callback function
+		if os.Getenv(container.ENV_EXEC_PID) != "" {
+			log.Infof("pid callback pid %s", strconv.Itoa(os.Getgid()))
+			return nil
+		}
+
+		// 命令格式  mydocker exec containername cmd
+		if len(context.Args()) < 2 {
+			return fmt.Errorf("Missing container name or command")
+		}
+
+		containerName := context.Args().Get(0)
+		var commandArray []string
+
+		for _, arg := range context.Args().Tail() {
+			commandArray = append(commandArray, arg)
+		}
+		container.ExecContainer(containerName, commandArray)
 		return nil
 	},
 }
