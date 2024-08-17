@@ -39,6 +39,10 @@ var runCommand = cli.Command{
 			Name:  "v",
 			Usage: "create volume",
 		},
+		cli.StringFlag{
+			Name:  "name",
+			Usage: "container name",
+		},
 	},
 	/*
 		run 命令真正执行的函数
@@ -71,7 +75,9 @@ var runCommand = cli.Command{
 		}
 		// 获取volume 参数
 		volume := context.String("v")
-		Run(tty, cmdArray, resConf, volume)
+		// retrieve container name
+		containerName := context.String("name")
+		Run(tty, cmdArray, resConf, volume, containerName)
 		return nil
 	},
 }

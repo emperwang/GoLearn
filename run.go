@@ -10,13 +10,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Run(tty bool, command []string, res *subsystems.ResourceConfig, volume string) {
+func Run(tty bool, command []string, res *subsystems.ResourceConfig, volume string, containerName string) {
 	parent, writePipe := container.NewParentProcess(tty, volume)
 
 	if err := parent.Start(); err != nil {
 		log.Error(err)
 	}
 
+	// record container info
+	containerName, err := container.RecordContainerInfo(parent.Process.Pid, command, containerName)
+
+	if err != nil {
+		log.Errorf("record container info error, %s", err)
+		return
+	}
 	// 添加cgroup限制
 	cgroupManage := cgroups.NewCgroupManager("mydocker-cgroup")
 
@@ -31,6 +38,7 @@ func Run(tty bool, command []string, res *subsystems.ResourceConfig, volume stri
 		rootDir := "/root/docker"
 		mntDir := "/root/docker/mnt"
 		container.DeleteWorkSpae(rootDir, mntDir, volume)
+		container.DeleteRecordInfo(containerName)
 	}
 }
 
