@@ -22,6 +22,7 @@ type ContainerInfo struct {
 	Command    string `json:"command"`
 	CreateTime string `json:"createTime"`
 	Statue     string `json:"status"`
+	UpdateTime string `json:"updateTime"`
 }
 
 var (
@@ -53,6 +54,7 @@ func RecordContainerInfo(containerPid int, commandArray []string, containerName 
 		Command:    command,
 		CreateTime: createTime,
 		Statue:     RUNNING,
+		UpdateTime: createTime,
 	}
 
 	jsonBytes, err := json.Marshal(containInfo)
@@ -91,6 +93,28 @@ func RecordContainerInfo(containerPid int, commandArray []string, containerName 
 	}
 
 	return containerName, nil
+}
+
+func UpdateContainerInfo(containInfo ContainerInfo) error {
+	jsonBytes, err := json.Marshal(containInfo)
+
+	if err != nil {
+		return fmt.Errorf("marshal containerinfo fail when record container info. %s", err)
+	}
+	jsonString := string(jsonBytes)
+
+	// get absoulte container info file path
+	dirUrl := fmt.Sprintf(DefaultInfoLocation, containInfo.Name)
+	filePath := path.Join(dirUrl, ConfigName)
+
+	log.Infof("container info : %s", jsonString)
+	os.WriteFile(filePath, jsonBytes, 0644)
+
+	if err != nil {
+		return fmt.Errorf("write info into file error. %s", err)
+	}
+
+	return nil
 }
 
 func DeleteRecordInfo(containerName string) {

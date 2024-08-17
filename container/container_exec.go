@@ -20,7 +20,7 @@ const (
 
 func ExecContainer(containerName string, commandArray []string) {
 	// 根据 containerName 获取 pid
-	pid, err := getPidFromContainerName(containerName)
+	pid, err := GetPidFromContainerName(containerName)
 	if err != nil {
 		log.Errorf("retrieve container %s pid error %v", containerName, pid)
 		return
@@ -46,7 +46,7 @@ func ExecContainer(containerName string, commandArray []string) {
 	}
 }
 
-func getPidFromContainerName(containerName string) (string, error) {
+func GetPidFromContainerName(containerName string) (string, error) {
 
 	dirUrl := fmt.Sprintf(DefaultInfoLocation, containerName)
 	configPath := path.Join(dirUrl, ConfigName)
@@ -54,13 +54,13 @@ func getPidFromContainerName(containerName string) (string, error) {
 	bytes, err := os.ReadFile(configPath)
 	if err != nil {
 		log.Errorf("read config file failed, %v", err)
-		return "", nil
+		return "", err
 	}
 	var containerInfo ContainerInfo
 
 	if err := json.Unmarshal(bytes, &containerInfo); err != nil {
 		log.Errorf("json format error %v", err)
-		return "", nil
+		return "", err
 	}
 
 	return containerInfo.Pid, nil
