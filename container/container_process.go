@@ -27,7 +27,7 @@ var (
 3. clond 就是fork一个新进程, 并且使用了 namespace 隔离新创建的进程和外部环境
 4. 如果执行了 -ti 参数, 就需要把当前进程的输入输出导入到标准输入输出上
 */
-func NewParentProcess(tty bool, volume, containerName, imageName string) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume, containerName, imageName string, envSlice []string) (*exec.Cmd, *os.File) {
 	readPipe, writePipe, err := NewPipe()
 	if err != nil {
 		log.Errorf("new Pipe error: %v", err)
@@ -64,10 +64,11 @@ func NewParentProcess(tty bool, volume, containerName, imageName string) (*exec.
 		cmd.Stdout = stdLogFile
 		//cmd.Stdout = stdLogFile
 	}
-
-	NewWorkSpace(volume, imageName, containerName)
 	cmd.ExtraFiles = []*os.File{readPipe}
 	cmd.Dir = fmt.Sprintf(MntDir, containerName)
+	cmd.Env = append(os.Environ(), envSlice...)
+
+	NewWorkSpace(volume, imageName, containerName)
 	return cmd, writePipe
 }
 

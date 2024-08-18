@@ -10,8 +10,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Run(tty bool, command []string, res *subsystems.ResourceConfig, volume, containerName, imageName string) {
-	parent, writePipe := container.NewParentProcess(tty, volume, containerName, imageName)
+func Run(tty bool, command []string, res *subsystems.ResourceConfig, volume, containerName, imageName string, envSlice []string) {
+	// pass environment
+	parent, writePipe := container.NewParentProcess(tty, volume, containerName, imageName, envSlice)
 
 	if err := parent.Start(); err != nil {
 		log.Error(err)
