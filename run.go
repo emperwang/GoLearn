@@ -10,15 +10,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Run(tty bool, command []string, res *subsystems.ResourceConfig, volume string, containerName string) {
-	parent, writePipe := container.NewParentProcess(tty, volume, containerName)
+func Run(tty bool, command []string, res *subsystems.ResourceConfig, volume, containerName, imageName string) {
+	parent, writePipe := container.NewParentProcess(tty, volume, containerName, imageName)
 
 	if err := parent.Start(); err != nil {
 		log.Error(err)
 	}
 
 	// record container info
-	containerName, err := container.RecordContainerInfo(parent.Process.Pid, command, containerName)
+	containerName, err := container.RecordContainerInfo(parent.Process.Pid, command, containerName, volume)
 
 	if err != nil {
 		log.Errorf("record container info error, %s", err)
@@ -35,9 +35,7 @@ func Run(tty bool, command []string, res *subsystems.ResourceConfig, volume stri
 	sendInitCommand(command, writePipe)
 	if tty {
 		parent.Wait()
-		rootDir := "/root/docker"
-		mntDir := "/root/docker/mnt"
-		container.DeleteWorkSpae(rootDir, mntDir, volume)
+		container.DeleteWorkSpae(volume, containerName)
 		container.DeleteRecordInfo(containerName)
 	}
 }

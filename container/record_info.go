@@ -23,6 +23,7 @@ type ContainerInfo struct {
 	CreateTime string `json:"createTime"`
 	Statue     string `json:"status"`
 	UpdateTime string `json:"updateTime"`
+	Volume     string `json:"volume"`
 }
 
 var (
@@ -34,7 +35,7 @@ var (
 	ContainerLogFile    string = "container.log"
 )
 
-func RecordContainerInfo(containerPid int, commandArray []string, containerName string) (string, error) {
+func RecordContainerInfo(containerPid int, commandArray []string, containerName, volume string) (string, error) {
 	log.Infof("container parent pid %d", containerPid)
 	id := utils.RandStringBytes(10)
 
@@ -55,6 +56,7 @@ func RecordContainerInfo(containerPid int, commandArray []string, containerName 
 		CreateTime: createTime,
 		Statue:     RUNNING,
 		UpdateTime: createTime,
+		Volume:     volume,
 	}
 
 	jsonBytes, err := json.Marshal(containInfo)

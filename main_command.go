@@ -75,11 +75,15 @@ var runCommand = cli.Command{
 			CpuSet:      context.String("cpuset"),
 			CpuShare:    context.String("cpushare"),
 		}
+		// get image name
+		imageName := cmdArray[0]
+		cmdArray = cmdArray[1:]
+
 		// 获取volume 参数
 		volume := context.String("v")
 		// retrieve container name
 		containerName := context.String("name")
-		Run(tty, cmdArray, resConf, volume, containerName)
+		Run(tty, cmdArray, resConf, volume, containerName, imageName)
 		return nil
 	},
 }
@@ -102,10 +106,10 @@ var commitCommand = cli.Command{
 		if len(context.Args()) < 1 {
 			log.Errorf("Missing container name")
 		}
-
-		imageName := context.Args().Get(0)
+		containerName := context.Args().Get(0)
+		imageName := context.Args().Get(1)
 		// commit container
-		commitContainer(imageName)
+		commitContainer(containerName, imageName)
 
 		return nil
 	},
