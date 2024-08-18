@@ -43,6 +43,9 @@ func StopContainer(containerName string) {
 	containerInfo.Pid = ""
 	containerInfo.UpdateTime = time.Now().Format("2006-01-02 15:04:05")
 	UpdateContainerInfo(*containerInfo)
+
+	//todo:  when stop, umount mountpoint
+
 }
 
 func GetContainerInfoFromContainerName(containerName string) (*ContainerInfo, error) {
