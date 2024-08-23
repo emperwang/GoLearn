@@ -12,6 +12,7 @@ func main() {
 
 	app.Commands = []*cli.Command{
 		TuiCommand,
+		GhQuery,
 	}
 
 	err := app.Run(os.Args)
