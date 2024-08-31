@@ -39,6 +39,7 @@ const (
 )
 
 var (
+	// https://tool.chinaz.com/tools/pagecolor.aspx color selector
 	cyan  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#00FFFF"))
 	green = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#32CD32"))
 	gray  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#696969"))
