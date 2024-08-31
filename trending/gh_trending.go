@@ -8,10 +8,10 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/charmbracelet/lipgloss"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,12 +29,20 @@ type TrendingInfo struct {
 	UrlAddr     string
 	Forks       string
 	Stars       string
+	StarsDay    string
 }
 
 const (
 	DAILY   = "daily"
 	WEEKLY  = "weekly"
 	MONTHLY = "monthly"
+)
+
+var (
+	cyan  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#00FFFF"))
+	green = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#32CD32"))
+	gray  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#696969"))
+	gold  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#B8860B"))
 )
 
 var proxy, _ = url.Parse("http://localhost:7897")
@@ -78,12 +86,13 @@ func (gh *GithubTrending) Query() ([]*TrendingInfo, error) {
 	if err != nil {
 		log.Errorf("create document error %v", err)
 	}
-	regex, _ := regexp.Compile("[\n ]")
+	pattern, _ := regexp.Compile("[\n ]")
+	numberPattern, _ := regexp.Compile("[0-9]{1,}")
 	doc.Find(".Box-row").Each(func(i int, s *goquery.Selection) {
 		aLink := s.Find("h2 a")
 		// repo的title
 		title := aLink.Text()
-		res := regex.ReplaceAllString(title, "")
+		res := pattern.ReplaceAllString(title, "")
 
 		// repo 链接
 		aHref, _ := aLink.Attr("href")
@@ -98,20 +107,26 @@ func (gh *GithubTrending) Query() ([]*TrendingInfo, error) {
 		})
 		// repo fork 数量
 		forkNumber := s.Find("div:nth-child(4)").Find("a:nth-child(2)").Text()
-		forkNumber = regex.ReplaceAllString(forkNumber, "")
-		// repe start 数量
-		startNumber := s.Find("div:nth-child(4)").Find("a:first-of-type").Text()
-		startNumber = regex.ReplaceAllString(startNumber, "")
+		forkNumber = pattern.ReplaceAllString(forkNumber, "")
+		// repo start 数量
+		starNumber := s.Find("div:nth-child(4)").Find("a:first-of-type").Text()
+		starNumber = pattern.ReplaceAllString(starNumber, "")
+
+		// stars of today
+		starsDay := s.Find("div:nth-child(4)").Find("span:nth-of-type(3)").Text()
+		starsNum := numberPattern.FindString(starsDay)
+		log.Debugf("search startDay content: %s, number: %s", starsDay, starsNum)
 
 		info := TrendingInfo{
 			Title:       res,
 			Description: description,
 			UrlAddr:     gh.Host + aHref,
 			Forks:       forkNumber,
-			Stars:       startNumber,
+			Stars:       starNumber,
+			StarsDay:    starsNum,
 		}
 		trends = append(trends, &info)
-		log.Debugf("query title:  %s, href: %s, descr: %s, fork %s, starNumber: %s", res, aHref, description, forkNumber, startNumber)
+		log.Debugf("query title:  %s, href: %s, descr: %s, fork %s, starNumber: %s", res, aHref, description, forkNumber, starNumber)
 	})
 
 	return trends, nil
@@ -121,7 +136,7 @@ var JavaDefaultGHTrending = &GithubTrending{
 	Host:        "https://github.com",
 	RequestPath: "trending",
 	Language:    "java",
-	DataRange:   WEEKLY,
+	DataRange:   DAILY,
 	Proxy:       proxy,
 }
 
@@ -129,7 +144,7 @@ var GoDefaultGHTrending = &GithubTrending{
 	Host:        "https://github.com",
 	RequestPath: "trending",
 	Language:    "go",
-	DataRange:   WEEKLY,
+	DataRange:   DAILY,
 	Proxy:       proxy,
 }
 
@@ -137,7 +152,7 @@ var PythonDefaultGHTrending = &GithubTrending{
 	Host:        "https://github.com",
 	RequestPath: "trending",
 	Language:    "python",
-	DataRange:   WEEKLY,
+	DataRange:   DAILY,
 	Proxy:       proxy,
 }
 
@@ -145,7 +160,7 @@ var NodeJsDefaultGHTrending = &GithubTrending{
 	Host:        "https://github.com",
 	RequestPath: "trending",
 	Language:    "javascript",
-	DataRange:   WEEKLY,
+	DataRange:   DAILY,
 	Proxy:       proxy,
 }
 
@@ -169,14 +184,10 @@ func GhTrendingQuery(language, format string) {
 		data, _ := json.MarshalIndent(infos, "", " ")
 		fmt.Fprintf(os.Stdout, "%s", string(data))
 	case "table":
-		writer := tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', tabwriter.TabIndent|tabwriter.Debug)
-		fmt.Fprintf(writer, "title\tlanguage\tStars\tforks\tStars today")
 		for _, info := range infos {
-			fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s", info.Title, language, info.
-				Stars, info.Forks, "0")
-			writer.Flush()
-			fmt.Printf("\nDescription: %s \n", info.Description)
-			fmt.Printf("Link: %s \n", info.UrlAddr)
+			fmt.Printf("Repo:    %s  |  language: %s  |  Stars:  %s  |  forks:  %s  |  Stars Today:  %s \n", cyan.Render(info.Title), cyan.Render(language), cyan.Render(info.Stars), cyan.Render(info.Forks), cyan.Render(info.StarsDay))
+			fmt.Printf("Desc:    %s\n", green.Render(info.Description))
+			fmt.Printf("Link:    %s \n\n", gold.Render(info.UrlAddr))
 
 		}
 	default:
