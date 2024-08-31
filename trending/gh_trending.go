@@ -1,10 +1,14 @@
 package trending
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -23,8 +27,8 @@ type TrendingInfo struct {
 	Title       string
 	Description string
 	UrlAddr     string
-	ForkNumber  string
-	StarNumber  string
+	Forks       string
+	Stars       string
 }
 
 const (
@@ -103,8 +107,8 @@ func (gh *GithubTrending) Query() ([]*TrendingInfo, error) {
 			Title:       res,
 			Description: description,
 			UrlAddr:     gh.Host + aHref,
-			ForkNumber:  forkNumber,
-			StarNumber:  startNumber,
+			Forks:       forkNumber,
+			Stars:       startNumber,
 		}
 		trends = append(trends, &info)
 		log.Debugf("query title:  %s, href: %s, descr: %s, fork %s, starNumber: %s", res, aHref, description, forkNumber, startNumber)
@@ -143,4 +147,39 @@ var NodeJsDefaultGHTrending = &GithubTrending{
 	Language:    "javascript",
 	DataRange:   WEEKLY,
 	Proxy:       proxy,
+}
+
+func GhTrendingQuery(language, format string) {
+	infos := []*TrendingInfo{}
+	switch language {
+	case "java":
+		infos, _ = JavaDefaultGHTrending.Query()
+	case "python":
+		infos, _ = PythonDefaultGHTrending.Query()
+	case "go":
+		infos, _ = GoDefaultGHTrending.Query()
+	case "javascript":
+		infos, _ = NodeJsDefaultGHTrending.Query()
+	default:
+
+	}
+
+	switch format {
+	case "json":
+		data, _ := json.MarshalIndent(infos, "", " ")
+		fmt.Fprintf(os.Stdout, "%s", string(data))
+	case "table":
+		writer := tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', tabwriter.TabIndent|tabwriter.Debug)
+		fmt.Fprintf(writer, "title\tlanguage\tStars\tforks\tStars today")
+		for _, info := range infos {
+			fmt.Fprintf(writer, "%s\t%s\t%s\t%s\t%s", info.Title, language, info.
+				Stars, info.Forks, "0")
+			writer.Flush()
+			fmt.Printf("\nDescription: %s \n", info.Description)
+			fmt.Printf("Link: %s \n", info.UrlAddr)
+
+		}
+	default:
+
+	}
 }
