@@ -671,3 +671,33 @@ func TestSelectOr(t *testing.T) {
 		}
 	})
 }
+
+// 多层级选取
+func TestMultipleLayerSelect(t *testing.T) {
+	html := `
+	<body>
+		<div lang="zh">DIV1</div>
+		<span>
+			<div>DIV2</div>
+		</span>
+		<div lang="ch">DIV3</div>
+		<p>P2</p>
+		<div lang="ch1">
+			<a>123</a>
+			<a>456</a>
+		</div>
+	</body>
+`
+
+	doc, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
+
+	doc.Find("body").Each(func(i int, s *goquery.Selection) {
+		div3 := s.Find("div:nth-child(5)")
+
+		a1 := div3.Find("a:first-child").Text()
+		a2 := div3.Find("a:last-child").Text()
+
+		t.Logf("select value: %s, %s", a1, a2)
+	})
+
+}
