@@ -10,7 +10,7 @@ func TestAllocation(t *testing.T) {
 
 	aip, _ := ipAllocator.Allocate(ipnet)
 
-	t.Logf("first ip: %v, allocate IP: %s", ip, aip)
+	t.Logf("first ip: %v,ipnet: %s, allocate IP: %s", ip, ipnet.String(), aip)
 }
 
 func TestRelease(t *testing.T) {
