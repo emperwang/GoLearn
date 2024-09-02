@@ -55,19 +55,50 @@ func (bd BridgeNetworkDriver) Delete(network Network) error {
 }
 
 // 链接容器网络端点到网络
-func (bd BridgeNetworkDriver) Connect(network *Network, endpoint *EndPoint) error {
+func (bd *BridgeNetworkDriver) Connect(network *Network, endpoint *EndPoint) error {
+	//
+	bridgeName := network.Name
 
-	return nil
+	// 通过接口名 获取到 linux bridge 接口对象和接口属性
+	bridge, err := netlink.LinkByName(bridgeName)
+
+	if err != nil {
+		return err
+	}
+
+	// create veth
+	linkAttr := netlink.NewLinkAttrs()
+	// 取 endpoint ID 的前5位为 接口名
+	linkAttr.Name = endpoint.ID[:5]
+	// 设置  veth 的一端挂载到 对应的 linux bridge
+	linkAttr.MasterIndex = bridge.Attrs().Index
+
+	// create veth, 通过perrName 配置veth 另外一端的接口名
+	endpoint.Device = netlink.Veth{
+		LinkAttrs: linkAttr,
+		PeerName:  "cif" + endpoint.ID[:5],
+	}
+
+	// 创建veth
+	if err := netlink.LinkAdd(&endpoint.Device); err != nil {
+		return fmt.Errorf("Add endpoint device error: %v", err)
+	}
+
+	// 调用 LinkSetUp, 启动 veth. 相当于 ip link set xxx up
+
+	err = netlink.LinkSetUp(&endpoint.Device)
+
+	return err
 }
 
 // 从网络上移除容器网络端点
-func (bd BridgeNetworkDriver) Disconnect(network Network, endpoint *EndPoint) error {
+func (bd *BridgeNetworkDriver) Disconnect(network Network, endpoint *EndPoint) error {
 
 	return nil
 }
 
 // 初始化bridge 设备
-func (bd BridgeNetworkDriver) InitBridge(n *Network) error {
+func (bd *BridgeNetworkDriver) InitBridge(n *Network) error {
 
 	// 1. 创建 bridge 设备
 	bridgeName := bd.Name()

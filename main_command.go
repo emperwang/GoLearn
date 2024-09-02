@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"tutorial/GoLearn/cgroups/subsystems"
 	"tutorial/GoLearn/container"
+	"tutorial/GoLearn/network"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -195,5 +196,57 @@ var removeCommand = cli.Command{
 		containerName := context.Args().Get(0)
 		container.ContainerRemove(containerName)
 		return nil
+	},
+}
+
+var networkcomand = cli.Command{
+	Name:  "network",
+	Usage: "network operation",
+	Subcommands: []cli.Command{
+		{
+			Name:  "create",
+			Usage: "create a container network",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "driver",
+					Usage: "network driver",
+				},
+				cli.StringFlag{
+					Name:  "subnet",
+					Usage: "subnet cidr",
+				},
+			},
+			Action: func(context *cli.Context) error {
+				if len(context.Args()) < 1 {
+					return fmt.Errorf("Missing network name")
+				}
+				network.Init()
+
+				err := network.CreateNetwork(context.String("driver"), context.String("subnet"), context.Args()[0])
+				return err
+			},
+		},
+		{
+			Name:  "list",
+			Usage: "list container network",
+			Action: func(context *cli.Context) error {
+				network.Init()
+				network.ListNetwork()
+				return nil
+			},
+		},
+		{
+			Name:  "remove",
+			Usage: "remove container network",
+			Action: func(context *cli.Context) error {
+				if len(context.Args()) < 1 {
+					return fmt.Errorf("Missing network name")
+				}
+
+				network.Init()
+				err := network.DeleteNetwork(context.Args()[0])
+				return err
+			},
+		},
 	},
 }
